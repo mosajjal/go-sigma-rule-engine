@@ -1,8 +1,11 @@
 package sigma
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Config is used as argument to creating a new ruleset
@@ -15,7 +18,7 @@ type Config struct {
 	// this parameter will cause an early error return instead
 	FailOnRuleParse, FailOnYamlParse bool
 	// by default, we will collapse whitespace for both rules and data of non-regex rules and non-regex compared data
-	//setthig this to true turns that behavior off
+	// setthig this to true turns that behavior off
 	NoCollapseWS bool
 }
 
@@ -102,4 +105,26 @@ func (r Ruleset) EvalAll(e Event) (Results, bool) {
 		return results, true
 	}
 	return nil, false
+}
+
+func (r Ruleset) AddRule(data []byte, path string, noCollapseWS bool) error {
+	var rule Rule
+	err := yaml.Unmarshal(data, &r)
+	if err != nil {
+		ruleHandle := RuleHandle{
+			Path:         path,
+			Rule:         rule,
+			NoCollapseWS: noCollapseWS,
+			Multipart: func() bool {
+				return !bytes.HasPrefix(data, []byte("---")) && bytes.Contains(data, []byte("---"))
+			}(),
+		}
+		tree, err := NewTree(ruleHandle)
+		if err != nil {
+			r.Rules = append(r.Rules, tree)
+		} else {
+			return err
+		}
+	}
+	return err
 }
