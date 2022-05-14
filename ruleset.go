@@ -109,7 +109,7 @@ func (r Ruleset) EvalAll(e Event) (Results, bool) {
 
 func (r Ruleset) AddRule(data []byte, path string, noCollapseWS bool) error {
 	var rule Rule
-	err := yaml.Unmarshal(data, &r)
+	err := yaml.Unmarshal(data, &rule)
 	if err != nil {
 		ruleHandle := RuleHandle{
 			Path:         path,
